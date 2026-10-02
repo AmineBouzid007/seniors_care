@@ -4,7 +4,8 @@ import { Clock, HeartHandshake, MapPinned, UserRoundCheck, Quote } from "lucide-
 import { PulseLine } from "@/components/pulse-line";
 import { SpotlightCard } from "@/components/spotlight-card";
 import { ServiceIcon } from "@/components/service-icon";
-import { getServices } from "@/lib/queries";
+import { ActivityIcon } from "@/components/activity-icon";
+import { getActivities, getServices } from "@/lib/queries";
 
 export const revalidate = 60;
 
@@ -21,7 +22,9 @@ const WHY = [
 ];
 
 export default async function Home() {
-  const services = (await getServices()).slice(0, 3);
+  const [allServices, allActivities] = await Promise.all([getServices(), getActivities()]);
+  const services = allServices.slice(0, 3);
+  const activities = allActivities.slice(0, 6);
 
   return (
     <>
@@ -95,6 +98,29 @@ export default async function Home() {
       </section>
 
       <section className="mx-auto max-w-6xl px-6 py-24">
+        <div className="grid items-start gap-12 lg:grid-cols-[0.8fr_1.2fr]">
+          <div className="lg:sticky lg:top-28">
+            <h2 className="text-3xl font-semibold sm:text-4xl">Days worth looking forward to</h2>
+            <p className="mt-5 max-w-md text-lg text-ink-text/80">Beyond daily tasks, we bring activities that keep body and mind active and make every visit meaningful.</p>
+            <Link href="/activities" className="mt-6 inline-block rounded-full bg-ink px-7 py-3 font-semibold text-white transition hover:bg-ink-2">Explore activities</Link>
+          </div>
+          <ul className="grid gap-4 sm:grid-cols-2">
+            {activities.map((a) => (
+              <li key={a.slug}>
+                <SpotlightCard className="h-full rounded-3xl border border-ink/10 bg-white p-6">
+                  <div className="flex items-center gap-4">
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-pulse/25 text-teal"><ActivityIcon name={a.icon} /></span>
+                    <h3 className="text-lg font-semibold">{a.title}</h3>
+                  </div>
+                  <p className="mt-3 text-ink-text/75">{a.description}</p>
+                </SpotlightCard>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-6 pb-24">
         <h2 className="text-3xl font-semibold sm:text-4xl">What families say</h2>
         <div className="mt-10 grid gap-5 md:grid-cols-2">
           {[

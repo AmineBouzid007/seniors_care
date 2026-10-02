@@ -2,12 +2,12 @@ import { z } from "zod";
 import { GOVERNORATES } from "./constants";
 import { todayInTunis } from "./utils";
 
-const phone = z.string().trim().regex(/^\+?[0-9 ()-]{8,20}$/, "Enter a valid phone number.");
+const phone = z.string().trim().regex(/^\+?[0-9 ()-]{8,20}$/, "Enter a valid phone number.")
+  .refine((v) => v.replace(/\D/g, "").length >= 8, "Enter a valid phone number.");
 
 export const bookingSchema = z.object({
   fullName: z.string().trim().min(2, "Enter your full name.").max(100),
   email: z.string().trim().toLowerCase().email("Enter a valid email address.").max(160),
-  cin: z.string().trim().regex(/^[A-Za-z0-9]{8}$/, "CIN must be exactly 8 letters or digits."),
   phone,
   serviceSlug: z.string().trim().min(1, "Choose a service."),
   governorate: z.enum(GOVERNORATES, { errorMap: () => ({ message: "Choose a governorate." }) }),

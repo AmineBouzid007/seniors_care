@@ -13,6 +13,7 @@ export function SiteFooter() {
           <span className="font-display font-semibold text-white">Explore</span>
           <Link className="hover:text-pulse" href="/about">About us</Link>
           <Link className="hover:text-pulse" href="/services">Services</Link>
+          <Link className="hover:text-pulse" href="/activities">Activities</Link>
           <Link className="hover:text-pulse" href="/booking">Book a service</Link>
           <Link className="hover:text-pulse" href="/contact">Contact</Link>
         </nav>

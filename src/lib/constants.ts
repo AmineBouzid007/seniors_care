@@ -32,3 +32,27 @@ export const DEFAULT_SERVICES: ServiceInfo[] = [
   { slug: "respite-care", name: "Respite Care", priceTnd: 80, durationMinutes: 240,
     description: "Temporary relief for primary caregivers, ensuring continuous care without interruption." },
 ];
+
+/** Icon keys an activity can use (shown in the admin dropdown). */
+export const ACTIVITY_ICONS = ["exercise", "brain", "music", "art", "garden", "book", "walk", "heart"] as const;
+
+export type ActivityInfo = { id?: number; slug: string; title: string; description: string; icon: string };
+
+/**
+ * Starter activities (seed + fallback if the DB is down).
+ * NOTE: these are generic examples - edit them in /admin/activities to match what you really offer.
+ */
+export const DEFAULT_ACTIVITIES: ActivityInfo[] = [
+  { slug: "gentle-exercise", icon: "exercise", title: "Gentle exercise",
+    description: "Light stretching and movement sessions that keep joints supple and build confidence, adapted to each person's abilities." },
+  { slug: "memory-games", icon: "brain", title: "Memory games",
+    description: "Puzzles, card games and conversation prompts that keep the mind active and make time together enjoyable." },
+  { slug: "music-and-singing", icon: "music", title: "Music and singing",
+    description: "Familiar songs and music that bring back memories, lift the mood and encourage sharing." },
+  { slug: "arts-and-crafts", icon: "art", title: "Arts and crafts",
+    description: "Drawing, painting and simple handwork for creative expression and fine motor skills." },
+  { slug: "walks-and-fresh-air", icon: "walk", title: "Walks and fresh air",
+    description: "Accompanied walks and time in the garden or on the balcony, at a pace that suits the person." },
+  { slug: "reading-and-conversation", icon: "book", title: "Reading and conversation",
+    description: "Reading aloud, storytelling and unhurried conversation, because company is care too." },
+];

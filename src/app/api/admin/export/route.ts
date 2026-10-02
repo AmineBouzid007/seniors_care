@@ -14,9 +14,9 @@ const cell = (v: unknown) => {
 export async function GET() {
   if (!(await getSession())) return new NextResponse("Unauthorized", { status: 401 });
   const rows = await exportBookings();
-  const head = ["reference","status","date","time","service","price_tnd","client","cin","phone","email","governorate","address","notes","created_at"];
+  const head = ["reference","status","date","time","service","price_tnd","client","phone","email","governorate","address","notes","created_at"];
   const lines = [head.join(",")].concat(
-    rows.map((r) => [r.reference, r.status, r.date, r.time, r.service, r.price, r.client, r.cin, r.phone, r.email, r.governorate, r.address, r.notes, r.created].map(cell).join(",")),
+    rows.map((r) => [r.reference, r.status, r.date, r.time, r.service, r.price, r.client, r.phone, r.email, r.governorate, r.address, r.notes, r.created].map(cell).join(",")),
   );
   return new NextResponse("\uFEFF" + lines.join("\r\n"), {
     headers: {

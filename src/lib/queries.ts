@@ -1,8 +1,8 @@
 import "server-only";
 import { and, asc, desc, eq, ilike, or, sql, count } from "drizzle-orm";
 import { getDb } from "./db";
-import { bookings, clients, contactMessages, services, type BookingStatus } from "./schema";
-import { DEFAULT_SERVICES, type ServiceInfo } from "./constants";
+import { activities, bookings, clients, contactMessages, services, type BookingStatus } from "./schema";
+import { DEFAULT_ACTIVITIES, DEFAULT_SERVICES, type ActivityInfo, type ServiceInfo } from "./constants";
 
 /* ───────────── Public ───────────── */
 
@@ -20,6 +20,23 @@ export async function getServices(): Promise<ServiceInfo[]> {
     console.error("[getServices] falling back to defaults:", e instanceof Error ? e.message : e);
     return DEFAULT_SERVICES;
   }
+}
+
+/** Visible activities. Falls back to built-in examples if the DB is missing/unreachable or empty. */
+export async function getActivities(): Promise<ActivityInfo[]> {
+  try {
+    const rows = await getDb().select().from(activities)
+      .where(eq(activities.active, true)).orderBy(asc(activities.sortOrder), asc(activities.id));
+    if (!rows.length) return DEFAULT_ACTIVITIES;
+    return rows.map((r) => ({ id: r.id, slug: r.slug, title: r.title, description: r.description, icon: r.icon }));
+  } catch (e) {
+    console.error("[getActivities] falling back to defaults:", e instanceof Error ? e.message : e);
+    return DEFAULT_ACTIVITIES;
+  }
+}
+
+export async function listAllActivities() {
+  return getDb().select().from(activities).orderBy(asc(activities.sortOrder), asc(activities.id));
 }
 
 /* ───────────── Admin: dashboard ───────────── */
@@ -68,7 +85,9 @@ export async function listBookings(opts: { status?: string; q?: string; page?: n
   }
   if (opts.q) {
     const like = `%${opts.q.replace(/[%_]/g, "")}%`;
-    filters.push(or(ilike(bookings.reference, like), ilike(clients.fullName, like), ilike(bookings.contactPhone, like), ilike(clients.cin, like)));
+    const digits = opts.q.replace(/\D/g, "");
+    filters.push(or(ilike(bookings.reference, like), ilike(clients.fullName, like), ilike(bookings.contactPhone, like),
+      digits.length >= 3 ? ilike(clients.phoneKey, `%${digits}%`) : undefined));
   }
   const where = filters.length ? and(...filters) : undefined;
   const page = Math.max(1, opts.page ?? 1);
@@ -78,7 +97,7 @@ export async function listBookings(opts: { status?: string; q?: string; page?: n
       id: bookings.id, reference: bookings.reference, status: bookings.status, date: bookings.bookingDate,
       time: bookings.bookingTime, price: bookings.priceTnd, notes: bookings.notes, governorate: bookings.governorate,
       address: bookings.address, phone: bookings.contactPhone, email: bookings.contactEmail,
-      client: clients.fullName, cin: clients.cin, service: services.name,
+      client: clients.fullName, service: services.name,
     }).from(bookings).innerJoin(clients, eq(bookings.clientId, clients.id)).innerJoin(services, eq(bookings.serviceId, services.id))
       .where(where).orderBy(desc(bookings.createdAt)).limit(PAGE_SIZE).offset((page - 1) * PAGE_SIZE),
     db.select({ n: count() }).from(bookings).innerJoin(clients, eq(bookings.clientId, clients.id)).where(where),
@@ -89,7 +108,7 @@ export async function listBookings(opts: { status?: string; q?: string; page?: n
 export async function exportBookings() {
   return getDb().select({
     reference: bookings.reference, status: bookings.status, date: bookings.bookingDate, time: bookings.bookingTime,
-    service: services.name, price: bookings.priceTnd, client: clients.fullName, cin: clients.cin,
+    service: services.name, price: bookings.priceTnd, client: clients.fullName,
     phone: bookings.contactPhone, email: bookings.contactEmail, governorate: bookings.governorate,
     address: bookings.address, notes: bookings.notes, created: bookings.createdAt,
   }).from(bookings).innerJoin(clients, eq(bookings.clientId, clients.id)).innerJoin(services, eq(bookings.serviceId, services.id))
@@ -101,12 +120,13 @@ export async function exportBookings() {
 export async function listClients(q?: string) {
   const like = q ? `%${q.replace(/[%_]/g, "")}%` : null;
   return getDb().select({
-    id: clients.id, name: clients.fullName, cin: clients.cin, email: clients.email, phone: clients.phone,
+    id: clients.id, name: clients.fullName, email: clients.email, phone: clients.phone,
     governorate: clients.governorate, createdAt: clients.createdAt,
     bookings: sql<number>`count(${bookings.id})::int`,
     spent: sql<string>`coalesce(sum(${bookings.priceTnd}) filter (where ${bookings.status} = 'completed'),0)`,
   }).from(clients).leftJoin(bookings, eq(bookings.clientId, clients.id))
-    .where(like ? or(ilike(clients.fullName, like), ilike(clients.cin, like), ilike(clients.phone, like), ilike(clients.email, like)) : undefined)
+    .where(like ? or(ilike(clients.fullName, like), ilike(clients.phone, like), ilike(clients.email, like),
+      (q ?? "").replace(/\D/g, "").length >= 3 ? ilike(clients.phoneKey, `%${(q ?? "").replace(/\D/g, "")}%`) : undefined) : undefined)
     .groupBy(clients.id).orderBy(desc(clients.createdAt)).limit(200);
 }
 

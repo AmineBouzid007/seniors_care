@@ -17,10 +17,10 @@ CREATE TABLE services (
 
 CREATE TABLE clients (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  cin         text NOT NULL UNIQUE,
   full_name   text NOT NULL,
   email       text NOT NULL,
   phone       text NOT NULL,
+  phone_key   text NOT NULL UNIQUE,   -- digits only, without +216
   governorate text NOT NULL,
   address     text NOT NULL,
   created_at  timestamptz NOT NULL DEFAULT now()
@@ -46,6 +46,16 @@ CREATE TABLE bookings (
 CREATE INDEX bookings_status_idx ON bookings(status);
 CREATE INDEX bookings_date_idx   ON bookings(booking_date);
 CREATE INDEX bookings_client_idx ON bookings(client_id);
+
+CREATE TABLE activities (
+  id          serial PRIMARY KEY,
+  slug        text NOT NULL UNIQUE,
+  title       text NOT NULL,
+  description text NOT NULL,
+  icon        text NOT NULL DEFAULT 'heart',
+  active      boolean NOT NULL DEFAULT true,
+  sort_order  integer NOT NULL DEFAULT 0
+);
 
 CREATE TABLE contact_messages (
   id         serial PRIMARY KEY,

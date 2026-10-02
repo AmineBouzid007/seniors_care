@@ -19,13 +19,13 @@ export const services = pgTable("services", {
   sortOrder: integer("sort_order").notNull().default(0),
 });
 
-/** People who book. CIN (national ID) is unique; it replaces the old CIN primary key. */
+/** People who book. Recognised by phone number (phone_key = digits only, without +216). No national ID is stored. */
 export const clients = pgTable("clients", {
   id: uuid("id").defaultRandom().primaryKey(),
-  cin: text("cin").notNull().unique(),
   fullName: text("full_name").notNull(),
   email: text("email").notNull(),
   phone: text("phone").notNull(),
+  phoneKey: text("phone_key").notNull().unique(),
   governorate: text("governorate").notNull(),
   address: text("address").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -61,6 +61,17 @@ export const bookings = pgTable(
     index("bookings_client_idx").on(t.clientId),
   ],
 );
+
+/** Wellbeing / social activities shown on the website (managed in /admin/activities). */
+export const activities = pgTable("activities", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  icon: text("icon").notNull().default("heart"), // key from ACTIVITY_ICONS in constants.ts
+  active: boolean("active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+});
 
 /** Messages sent from the Contact page. */
 export const contactMessages = pgTable("contact_messages", {

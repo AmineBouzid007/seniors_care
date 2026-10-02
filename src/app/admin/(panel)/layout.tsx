@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LayoutDashboard, CalendarCheck, Users, Wallet, Inbox, Settings2, LogOut, Globe } from "lucide-react";
+import { LayoutDashboard, CalendarCheck, Sparkles, Users, Wallet, Inbox, Settings2, LogOut, Globe } from "lucide-react";
 import { requireAdmin } from "@/lib/auth";
 import { logoutAction } from "../actions";
 import { LogoMark } from "@/components/pulse-line";
@@ -13,6 +13,7 @@ const NAV = [
   { href: "/admin/reports", label: "Financial reports", icon: Wallet },
   { href: "/admin/messages", label: "Messages", icon: Inbox },
   { href: "/admin/services", label: "Services & prices", icon: Settings2 },
+  { href: "/admin/activities", label: "Activities", icon: Sparkles },
 ];
 
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {

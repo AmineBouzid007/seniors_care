@@ -19,7 +19,7 @@ export default async function Bookings({ searchParams }: { searchParams: Promise
     <>
       <PageTitle action={<a href="/api/admin/export" className="inline-flex items-center gap-2 rounded-full border border-ink/20 px-5 py-2.5 font-semibold hover:bg-white"><Download className="h-4 w-4" aria-hidden="true" />Export CSV</a>}>Bookings</PageTitle>
       <form className="mb-4 flex flex-wrap gap-3">
-        <input name="q" defaultValue={sp.q} placeholder="Search reference, name, phone, CIN" aria-label="Search" className="field max-w-sm" />
+        <input name="q" defaultValue={sp.q} placeholder="Search reference, name or phone" aria-label="Search" className="field max-w-sm" />
         <select name="status" defaultValue={sp.status ?? ""} aria-label="Status" className="field max-w-[12rem]"><option value="">All statuses</option>{BOOKING_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}</select>
         <button className="rounded-full bg-ink px-6 py-2.5 font-semibold text-white">Filter</button>
       </form>
@@ -34,7 +34,7 @@ export default async function Bookings({ searchParams }: { searchParams: Promise
               <StatusBadge status={b.status} />
             </div>
             <dl className="mt-3 grid gap-x-8 gap-y-1 text-[0.97rem] sm:grid-cols-2">
-              <div><dt className="inline text-ink-text/60">Client: </dt><dd className="inline">{b.client} (CIN {b.cin})</dd></div>
+              <div><dt className="inline text-ink-text/60">Client: </dt><dd className="inline">{b.client}</dd></div>
               <div><dt className="inline text-ink-text/60">Phone: </dt><dd className="inline"><a className="text-teal hover:underline" href={`tel:${b.phone}`}>{b.phone}</a></dd></div>
               <div><dt className="inline text-ink-text/60">Email: </dt><dd className="inline"><a className="text-teal hover:underline" href={`mailto:${b.email}`}>{b.email}</a></dd></div>
               <div><dt className="inline text-ink-text/60">Address: </dt><dd className="inline">{b.address}, {b.governorate}</dd></div>

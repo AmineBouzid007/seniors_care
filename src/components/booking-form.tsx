@@ -52,7 +52,6 @@ export function BookingForm({ services, defaultService }: { services: ServiceInf
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Full name" name="fullName" required error={errors.fullName}><input id="fullName" name="fullName" autoComplete="name" required className="field" {...inv("fullName")} /></Field>
         <Field label="Email address" name="email" required error={errors.email}><input id="email" name="email" type="email" autoComplete="email" required className="field" {...inv("email")} /></Field>
-        <Field label="CIN (national ID)" name="cin" required error={errors.cin} hint="8 letters or digits"><input id="cin" name="cin" maxLength={8} autoComplete="off" required className="field uppercase" {...inv("cin")} /></Field>
         <Field label="Phone number" name="phone" required error={errors.phone}><input id="phone" name="phone" type="tel" autoComplete="tel" required className="field" {...inv("phone")} /></Field>
       </div>
 

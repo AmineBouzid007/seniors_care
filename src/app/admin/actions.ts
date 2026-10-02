@@ -6,7 +6,8 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { getDb } from "@/lib/db";
-import { adminUsers, bookings, contactMessages, services, BOOKING_STATUSES } from "@/lib/schema";
+import { activities, adminUsers, bookings, contactMessages, services, BOOKING_STATUSES } from "@/lib/schema";
+import { ACTIVITY_ICONS } from "@/lib/constants";
 import { endSession, requireAdmin, startSession } from "@/lib/auth";
 
 export type LoginState = { error?: string };
@@ -72,4 +73,43 @@ export async function updateService(form: FormData) {
   revalidatePath("/services");
   revalidatePath("/booking");
   revalidatePath("/");
+}
+
+/* ───────────── Activities ───────────── */
+
+const activityFields = z.object({
+  title: z.string().trim().min(2).max(80),
+  description: z.string().trim().min(5).max(400),
+  icon: z.enum(ACTIVITY_ICONS),
+});
+
+function refreshActivities() {
+  revalidatePath("/admin/activities");
+  revalidatePath("/activities");
+  revalidatePath("/");
+}
+
+const slugify = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "activity";
+
+export async function saveActivity(form: FormData) {
+  await requireAdmin();
+  const id = z.coerce.number().int().parse(form.get("id"));
+  const f = activityFields.parse({ title: form.get("title"), description: form.get("description"), icon: form.get("icon") });
+  const sortOrder = z.coerce.number().int().min(0).max(999).parse(form.get("sortOrder") ?? 0);
+  await getDb().update(activities).set({ ...f, sortOrder, active: form.get("active") === "on" }).where(eq(activities.id, id));
+  refreshActivities();
+}
+
+export async function createActivity(form: FormData) {
+  await requireAdmin();
+  const f = activityFields.parse({ title: form.get("title"), description: form.get("description"), icon: form.get("icon") });
+  const slug = `${slugify(f.title)}-${Math.random().toString(36).slice(2, 6)}`;
+  await getDb().insert(activities).values({ ...f, slug, sortOrder: 100 });
+  refreshActivities();
+}
+
+export async function deleteActivity(form: FormData) {
+  await requireAdmin();
+  await getDb().delete(activities).where(eq(activities.id, z.coerce.number().int().parse(form.get("id"))));
+  refreshActivities();
 }

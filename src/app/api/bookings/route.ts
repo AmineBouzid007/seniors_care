@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { bookings, clients, services } from "@/lib/schema";
 import { bookingSchema, fieldErrors } from "@/lib/validation";
+import { phoneKey } from "@/lib/utils";
 
 export const runtime = "nodejs";
 
@@ -36,13 +37,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, errors: { serviceSlug: "This service is not available." }, message: "Please choose another service." }, { status: 422 });
     }
 
-    // Create the client profile once per CIN. We never overwrite an existing profile from
-    // a public form (anyone could type someone else's CIN) - the booking keeps its own contact snapshot.
+    // One client profile per phone number. We never overwrite an existing profile from a public
+    // form (anyone could type someone else's number) - each booking keeps its own contact snapshot.
+    const key = phoneKey(d.phone);
     await db.insert(clients).values({
-      cin: d.cin.toUpperCase(), fullName: d.fullName, email: d.email, phone: d.phone,
+      fullName: d.fullName, email: d.email, phone: d.phone, phoneKey: key,
       governorate: d.governorate, address: d.address,
-    }).onConflictDoNothing({ target: clients.cin });
-    const [client] = await db.select({ id: clients.id }).from(clients).where(eq(clients.cin, d.cin.toUpperCase())).limit(1);
+    }).onConflictDoNothing({ target: clients.phoneKey });
+    const [client] = await db.select({ id: clients.id }).from(clients).where(eq(clients.phoneKey, key)).limit(1);
 
     let reference = makeReference();
     for (let attempt = 0; attempt < 3; attempt++) {

@@ -9,7 +9,7 @@ import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { sql } from "drizzle-orm";
 import * as schema from "../src/lib/schema";
-import { DEFAULT_SERVICES } from "../src/lib/constants";
+import { DEFAULT_ACTIVITIES, DEFAULT_SERVICES } from "../src/lib/constants";
 
 config({ path: ".env.local" });
 config();
@@ -29,6 +29,12 @@ async function main() {
     });
   }
   console.log(`✔ ${DEFAULT_SERVICES.length} services ready`);
+
+  // Activities: inserted once; later edits made in /admin/activities are never overwritten.
+  for (const [i, a] of DEFAULT_ACTIVITIES.entries()) {
+    await db.insert(schema.activities).values({ ...a, sortOrder: i }).onConflictDoNothing({ target: schema.activities.slug });
+  }
+  console.log(`✔ ${DEFAULT_ACTIVITIES.length} activities ready`);
 
   const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.ADMIN_PASSWORD;

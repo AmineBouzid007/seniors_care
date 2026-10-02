@@ -1,6 +1,6 @@
 # Senior Care Tunisia: Documentation & Maintenance Guide
 
-Version 2.0 · Stack: Next.js 15 (App Router) · TypeScript · Tailwind CSS 4 · Neon Postgres · Drizzle ORM · Vercel
+Version 2.1 · Stack: Next.js 15 (App Router) · TypeScript · Tailwind CSS 4 · Neon Postgres · Drizzle ORM · Vercel
 
 > **How to use this document.** Part 1 explains what changed. Part 2 gets you live on Vercel. Parts 3 to 5 are your day-to-day manual. Part 6 is the maintenance playbook (monthly checklist, fixes, troubleshooting). Keep it in the repo so it travels with the code.
 
@@ -35,12 +35,14 @@ Vercel does not run PHP. The old site (`.php` files, `.htaccess` rewrites, MySQL
 | 4 | Contact form posted to `send_contact.php`, **which didn't exist** | Working form, messages saved to the database and shown in admin |
 | 5 | Two different `db.php` files with different column names (`first_name`/`location` vs `name`/`governorate`) | One schema, one source of truth (`src/lib/schema.ts`) |
 | 6 | DB password empty, user `root`, credentials in source | Connection string in an environment variable only |
-| 7 | CIN was the primary key and clients were matched by "email OR phone", so one person typing another's details could clash | Clients have their own ID; CIN is unique; each booking keeps its own contact snapshot |
+| 7 | CIN (national ID) was the primary key, and clients were matched by "email OR phone", so details could clash | **v2.1: the CIN field is removed entirely** (form, database, admin, export). Clients now have their own ID and are recognised by phone number; each booking keeps its own contact snapshot |
 | 8 | Prices were read from DB but there was no way to edit them | Admin page **Services & prices** |
 | 9 | Hard-coded `/seniorcare/` paths and `404.php` that didn't exist | Clean routing and a real 404 page |
 | 10 | No spam protection, thin validation | Server-side validation (Zod) + hidden honeypot field |
 
 ### Design
+The top navigation bar is frosted glass: it blurs whatever scrolls behind it and automatically switches between **white text** (over dark sections) and **dark text** (over light sections). To make a section count as dark, give it the `night` class (see `globals.css`); all other sections are treated as light.
+
 A dark "night shift" aurora-and-grid look with glass panels, a heartbeat line as the one signature animation, and a light, calm body for reading. Typefaces: **Sora** (headings) and **Atkinson Hyperlegible Next** (body, made for readability, which suits an audience of seniors and their families). Animations respect the "reduce motion" setting; everything is keyboard-accessible and responsive.
 
 ---
@@ -121,7 +123,7 @@ Hosted on **Neon** (serverless Postgres). The code talks to it over HTTPS throug
 ```
 services ──┐                     clients
  id         │                     id (uuid)
- slug  (unique)                   cin (unique)       ← national ID, sensitive
+ slug  (unique)                   phone_key (unique) ← digits only, no +216
  name                             full_name, email, phone
  description                      governorate, address
  price_tnd                        created_at
@@ -139,13 +141,15 @@ services ──┐                     clients
                         contact_phone, contact_email   ← snapshot for that booking
                         created_at, updated_at
 
+activities:       id, slug (unique), title, description, icon, active, sort_order
 contact_messages: id, name, email, phone, message, handled, created_at
 admin_users:      id, email (unique), name, password_hash (bcrypt), created_at
 ```
 
 ### Design decisions worth knowing
 - **Price is copied onto each booking.** Raising a price tomorrow never changes last month's revenue report.
-- **Contact details are copied onto each booking.** A public form can't be used to overwrite an existing client's profile by typing their CIN.
+- **Clients are recognised by phone number** (`phone_key`: digits only, without `+216`, so `+216 12 345 678`, `0021612345678` and `12345678` are the same person). **No national ID is collected or stored.**
+- **Contact details are copied onto each booking.** A public form can't be used to overwrite an existing client's profile by typing someone else's phone number.
 - **Services are hidden, not deleted** (untick *Visible*). Old bookings keep pointing to them.
 - **Status values** are a fixed list in the database, so typos are impossible.
 
@@ -156,6 +160,13 @@ admin_users:      id, email (unique), name, password_hash (bcrypt), created_at
 
 > Always make a **Neon branch** (a free instant copy) before structural changes: Neon console → Branches → *Create branch*. If something goes wrong, point `DATABASE_URL` back at the original.
 > `db:push` is perfect for a project of this size. If you later have several developers, switch to `drizzle-kit generate` + `migrate` for versioned migration files.
+
+### Upgrading a database created with v2.0 (CIN → phone, + activities)
+Only if you **already ran `db:push` with the first version**. Fresh installs skip this.
+1. Neon console → Branches → **Create branch** (a safety copy).
+2. Neon **SQL Editor**: paste and run `db/migrations/002_remove_cin_add_activities.sql`. It converts existing clients to phone-based identity, **permanently deletes the stored CIN numbers**, and creates the `activities` table.
+3. Deploy the new code, then run `npm run db:seed` once to insert the starter activities (your edited prices and activities are never overwritten).
+4. If step 2 reports a duplicate phone number, two clients share one number. The SQL file shows how to merge them.
 
 ### Backups
 Neon keeps a point-in-time history window that depends on your Neon plan (check the current limits in the Neon console). Independently of that, use **Bookings → Export CSV** regularly (see the checklist in Part 6). It's your off-platform backup.
@@ -169,11 +180,12 @@ Go to `/admin` (it is not linked from the public site on purpose).
 | Page | What it does |
 |---|---|
 | **Dashboard** | Pending requests, upcoming confirmed visits, revenue (completed), pipeline (pending + confirmed), clients, unhandled messages, latest 6 bookings |
-| **Bookings** | Search by reference, name, phone or CIN; filter by status; call or email the client with one tap; **change status**; **Export CSV** (opens in Excel) |
+| **Bookings** | Search by reference, name or phone; filter by status; call or email the client with one tap; **change status**; **Export CSV** (opens in Excel) |
 | **Clients** | Everyone who has booked, with number of bookings and amount paid |
 | **Financial reports** | Revenue by month (last 12), by service, by governorate. Only **completed** bookings count |
 | **Messages** | Contact-form messages; mark as handled |
 | **Services & prices** | Edit price (TND), duration, and visibility of each service. Changes appear on the public site within about a minute |
+| **Activities** | Add, edit, reorder, hide or delete the activities shown on the home page and `/activities` (title, description, icon). Changes appear within about a minute |
 
 ### Recommended daily workflow
 1. Open **Dashboard** → *Pending requests*.
@@ -189,6 +201,7 @@ Go to `/admin` (it is not linked from the public site on purpose).
 ```
 senior-care/
 ├── db/schema.sql              SQL version of the schema (manual alternative to db:push)
+├── db/migrations/             one-off SQL for upgrading an existing database
 ├── docs/DOCUMENTATION.md      this file
 ├── public/images/             photos (hero, about, admin login)
 ├── scripts/seed.ts            creates services + admin (npm run db:seed)
@@ -197,7 +210,7 @@ senior-care/
 │   ├── app/
 │   │   ├── layout.tsx         fonts, site-wide metadata/SEO
 │   │   ├── globals.css        THE DESIGN: colours, aurora, glass, animations
-│   │   ├── (site)/            public pages: page.tsx (home), about, services, booking, contact
+│   │   ├── (site)/            public pages: page.tsx (home), about, services, activities, booking, contact
 │   │   ├── admin/
 │   │   │   ├── login/         sign-in page
 │   │   │   ├── (panel)/       dashboard, bookings, clients, reports, messages, services
@@ -257,6 +270,7 @@ If the database is down or not yet connected, the **public pages still load** wi
 | Change a **service's price/visibility/duration** | Admin → Services & prices (no code) |
 | Change a **service's name or description** | `src/lib/constants.ts` (`DEFAULT_SERVICES`) then `npm run db:seed` (text refreshes, prices are kept), or edit the row in Neon |
 | Add a **new service** | Add an entry to `DEFAULT_SERVICES` (+ an icon in `src/components/service-icon.tsx`, optional) and run `npm run db:seed` |
+| Change the **activities** (text, icon, order) | Admin → Activities (no code). Starter examples live in `DEFAULT_ACTIVITIES` in `src/lib/constants.ts` |
 | Change **homepage text** | `src/app/(site)/page.tsx` |
 | Change **About text/values** | `src/app/(site)/about/page.tsx` |
 | Change **colours** | `src/app/globals.css`, block `@theme { … }` at the top (e.g. `--color-pulse` is the aqua accent) |
@@ -314,7 +328,7 @@ When you ask for changes, give the assistant: this file, `src/lib/schema.ts`, an
 **You should still do:**
 1. **Rate-limit the login and forms.** In Vercel → project → **Firewall**, add a rate-limiting rule for `/admin/login` and `/api/*` (check current plan limits on Vercel's pricing page). This is the single most valuable extra protection against password guessing and spam.
 2. Use a **long unique admin password** and don't share one account; create one per person.
-3. **CIN is personal data.** It is collected to identify clients, so: only give admin access to people who need it; don't paste exports into chat tools or email; delete data you no longer need. Tunisia has a personal-data protection law (Law 63-2004, overseen by the INPDP), and a health-adjacent service should state what it collects and why. Consider adding a short privacy notice and a consent checkbox to the booking form, and take legal advice for your situation. This documentation is not legal advice.
+3. **Client data is still personal data.** The site no longer collects the CIN, but names, phone numbers, addresses and health notes are collected. Only give admin access to people who need it; don't paste exports into chat tools or email; delete data you no longer need. Tunisia has a personal-data protection law (Law 63-2004, overseen by the INPDP), and a care service should state what it collects and why. Consider adding a short privacy notice and a consent checkbox to the booking form, and take legal advice for your situation. This documentation is not legal advice.
 4. Keep the GitHub repo **private**.
 5. Never commit `.env.local` (it's git-ignored).
 
@@ -344,9 +358,9 @@ The original zip contained **no `.sql` file**, so the old table structure was in
 
 | Old (MySQL) | New (Postgres) |
 |---|---|
-| `clients.cin, email, tel, name + last_name, governorate, address` | `clients.cin, email, phone, full_name, governorate, address` |
+| `clients.email, tel, name + last_name, governorate, address` (**do not import `cin`**) | `clients.email, phone, phone_key, full_name, governorate, address` (`phone_key` = digits of the phone, without 216) |
 | `services.service_name, price` | `services.name, price_tnd` (+ `slug`) |
-| `bookings.cin → client`, `service_id`, `price`, `booking_date`, `booking_time`, `notes`, `governorate`, `address` | `bookings.client_id` (look up by CIN), `service_id`, `price_tnd`, same date/time/notes/governorate/address, plus a generated `reference`, `contact_phone`, `contact_email`, `status` (use `completed` for past ones) |
+| `bookings.cin → client` (match the client through the old CIN, then discard it), `service_id`, `price`, `booking_date`, `booking_time`, `notes`, `governorate`, `address` | `bookings.client_id` (look up by CIN), `service_id`, `price_tnd`, same date/time/notes/governorate/address, plus a generated `reference`, `contact_phone`, `contact_email`, `status` (use `completed` for past ones) |
 | `admin` | **Don't migrate.** Create admins with `npm run db:seed` |
 
 3. Import with the Neon SQL Editor or ask your assistant to write a one-off import script (give it your CSV headers). Do it on a **Neon branch** first.
