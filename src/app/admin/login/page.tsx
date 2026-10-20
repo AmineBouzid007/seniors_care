@@ -12,7 +12,7 @@ export default function Login() {
       <Image src="/images/login.jpg" alt="" fill priority sizes="100vw" className="-z-20 object-cover" />
       <div className="absolute inset-0 -z-10 bg-ink/75" />
       <form action={action} className="glass w-full max-w-md rounded-[2rem] p-8 text-white shadow-2xl">
-        <div className="flex items-center gap-3"><LogoMark className="h-10 w-10" /><div><h1 className="text-2xl font-semibold">Staff sign in</h1><p className="text-white/70">Senior Care admin</p></div></div>
+        <div className="flex items-center gap-3"><LogoMark className="h-10 w-10" /><div><h1 className="text-2xl font-semibold">Staff sign in</h1><p className="text-white/70">Seniors Care admin</p></div></div>
         {state.error && <p role="alert" className="mt-5 rounded-xl bg-orange-500/20 p-3 font-semibold text-orange-100">{state.error}</p>}
         <label htmlFor="email" className="mt-6 block font-semibold">Email</label>
         <input id="email" name="email" type="email" required autoComplete="username" className="field mt-1.5 !bg-white/95" />

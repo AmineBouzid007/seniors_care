@@ -124,7 +124,7 @@ export default async function Home() {
         <h2 className="text-3xl font-semibold sm:text-4xl">What families say</h2>
         <div className="mt-10 grid gap-5 md:grid-cols-2">
           {[
-            ["Senior Care helped my mother feel safe and cared for at home.", "Salma M., Sousse"],
+            ["Seniors Care helped my mother feel safe and cared for at home.", "Salma M., Sousse"],
             ["The professionalism and kindness of the staff was exceptional.", "Ahmed T., Tunis"],
           ].map(([q, who]) => (
             <figure key={who} className="rounded-3xl border border-ink/10 bg-white p-8">

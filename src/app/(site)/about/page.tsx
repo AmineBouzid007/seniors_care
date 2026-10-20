@@ -22,7 +22,7 @@ export default function About() {
         </div>
         <div>
           <h2 className="text-3xl font-semibold sm:text-4xl">Our mission</h2>
-          <p className="mt-5">At Senior Care, our mission is to deliver high-quality, person-centered care to seniors across Tunisia. We believe that every elderly individual deserves to age with dignity in the comfort of their own home or community.</p>
+          <p className="mt-5">At Seniors Care, our mission is to deliver high-quality, person-centered care to seniors across Tunisia. We believe that every elderly individual deserves to age with dignity in the comfort of their own home or community.</p>
           <p className="mt-4">We work closely with families to ensure their loved ones receive the right support, from basic daily tasks to emotional companionship and medical oversight. Our trained professionals are dedicated to making life easier, safer, and more fulfilling for every client.</p>
         </div>
       </section>
