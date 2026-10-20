@@ -12,9 +12,9 @@ export function PulseLine({ className = "" }: { className?: string }) {
 }
 
 export function LogoMark({ className = "h-8 w-8" }: { className?: string }) {
-  // The real Seniors Care logo, on a white tile so it stays readable on dark and light backgrounds.
+  // The real Seniors Care logo (transparent PNG).
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src="/logo.png" alt="" aria-hidden="true" className={`${className} shrink-0 rounded-xl bg-white object-contain p-1`} />
+    <img src="/logo.png" alt="" aria-hidden="true" className={`${className} shrink-0 object-contain`} />
   );
 }

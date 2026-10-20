@@ -57,7 +57,7 @@ export function SiteHeader() {
       >
         <div className="flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2.5 whitespace-nowrap font-display text-lg font-semibold tracking-tight" onClick={() => setOpen(false)}>
-            <LogoMark className="h-9 w-9" /> Seniors Care
+            <LogoMark className="h-10 w-10" /> Seniors Care
           </Link>
 
           <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
